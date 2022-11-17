@@ -93,7 +93,7 @@ func GetHttpListener() *HttpListener {
 
 func (l *HttpListener) AddHealthCheck() *HttpListener {
 
-	l.AddController(l.Probe(), joinUrl(l.Options.ApiPrefix, "probe"), "GET")
+	l.AddController(l.Probe(), joinUrl("probe"), "GET")
 	return l
 }
 
