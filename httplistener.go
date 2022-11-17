@@ -93,7 +93,7 @@ func GetHttpListener() *HttpListener {
 
 func (l *HttpListener) AddHealthCheck() *HttpListener {
 
-	l.AddController(l.Probe(), l.Options.ApiPrefix+"probe", "GET")
+	l.AddController(l.Probe(), joinUrl(l.Options.ApiPrefix, "probe"), "GET")
 	return l
 }
 
@@ -121,19 +121,19 @@ func (l *HttpListener) WithAuthentication(prefix string, context interfaces.User
 	if ctx.Authorization != nil {
 		defaultAuthControllers := authControllers.NewAuthorizationControllers(context)
 
-		l.AddController(defaultAuthControllers.Token(), l.Options.ApiPrefix+"auth/token", "POST")
-		l.AddController(defaultAuthControllers.Token(), l.Options.ApiPrefix+"auth/{tenantId}/token", "POST")
-		l.AddController(defaultAuthControllers.Introspection(), l.Options.ApiPrefix+"auth/token/introspect", "POST")
-		l.AddController(defaultAuthControllers.Introspection(), l.Options.ApiPrefix+"auth/{tenantId}/token/introspect", "POST")
-		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Register(), l.Options.ApiPrefix+"auth/register", []string{"_su,_admin"}, "POST")
-		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Register(), l.Options.ApiPrefix+"auth/{tenantId}/register", []string{"_su,_admin"}, "POST")
-		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Revoke(), l.Options.ApiPrefix+"auth/revoke", []string{"_su,_admin"}, "POST")
-		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Revoke(), l.Options.ApiPrefix+"auth/{tenantId}/revoke", []string{"_su,_admin"}, "POST")
+		l.AddController(defaultAuthControllers.Token(), joinUrl(prefix, "token"), "POST")
+		l.AddController(defaultAuthControllers.Token(), joinUrl(prefix, "token"), "POST")
+		l.AddController(defaultAuthControllers.Introspection(), joinUrl(prefix, "token/introspect"), "POST")
+		l.AddController(defaultAuthControllers.Introspection(), joinUrl(prefix, "{tenantId}/token/introspect"), "POST")
+		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Register(), joinUrl(prefix, "register"), []string{"_su,_admin"}, "POST")
+		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Register(), joinUrl(prefix, "{tenantId}/register"), []string{"_su,_admin"}, "POST")
+		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Revoke(), joinUrl(prefix, "revoke"), []string{"_su,_admin"}, "POST")
+		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Revoke(), joinUrl(prefix, "{tenantId}/revoke"), []string{"_su,_admin"}, "POST")
 
-		l.AddController(defaultAuthControllers.Configuration(), l.Options.ApiPrefix+".well-known/openid-configuration", "GET")
-		l.AddController(defaultAuthControllers.Configuration(), l.Options.ApiPrefix+"auth/{tenantId}/.well-known/openid-configuration", "GET")
-		l.AddController(defaultAuthControllers.Jwks(), l.Options.ApiPrefix+".well-known/openid-configuration/jwks", "GET")
-		l.AddController(defaultAuthControllers.Jwks(), l.Options.ApiPrefix+"auth/{tenantId}/.well-known/openid-configuration/jwks", "GET")
+		l.AddController(defaultAuthControllers.Configuration(), joinUrl(prefix, ".well-known/openid-configuration"), "GET")
+		l.AddController(defaultAuthControllers.Configuration(), joinUrl(prefix, "{tenantId}/.well-known/openid-configuration"), "GET")
+		l.AddController(defaultAuthControllers.Jwks(), joinUrl(prefix, ".well-known/openid-configuration/jwks"), "GET")
+		l.AddController(defaultAuthControllers.Jwks(), joinUrl(prefix, "{tenantId}/.well-known/openid-configuration/jwks"), "GET")
 		l.DefaultAdapters = append([]controllers.Adapter{middleware.EndAuthorizationMiddlewareAdapter()}, l.DefaultAdapters...)
 		l.Options.EnableAuthentication = true
 	} else {
@@ -155,7 +155,7 @@ func (l *HttpListener) AddController(c controllers.Controller, path string, meth
 	adapters = append(adapters, l.DefaultAdapters...)
 
 	if l.Options.ApiPrefix != "" {
-		path = l.Options.ApiPrefix + path
+		path = joinUrl(l.Options.ApiPrefix, path)
 	}
 	subRouter.HandleFunc(path, controllers.Adapt(
 		http.HandlerFunc(c),
@@ -175,7 +175,7 @@ func (l *HttpListener) AddAuthorizedController(c controllers.Controller, path st
 	adapters = append(adapters, middleware.TokenAuthorizationMiddlewareAdapter([]string{}, []string{}))
 
 	if l.Options.ApiPrefix != "" {
-		path = l.Options.ApiPrefix + path
+		path = joinUrl(l.Options.ApiPrefix, path)
 	}
 
 	subRouter.HandleFunc(path,
@@ -205,7 +205,7 @@ func (l *HttpListener) AddAuthorizedControllerWithRolesAndClaims(c controllers.C
 	adapters = append(adapters, middleware.TokenAuthorizationMiddlewareAdapter(roles, claims))
 
 	if l.Options.ApiPrefix != "" {
-		path = l.Options.ApiPrefix + path
+		path = joinUrl(l.Options.ApiPrefix, path)
 	}
 
 	subRouter.HandleFunc(path,
@@ -331,14 +331,7 @@ func (l *HttpListener) getDefaultConfiguration() *HttpListenerOptions {
 		options.DatabaseName = "users"
 	}
 
-	apiPrefix := l.Context.Configuration.GetString("API_PREFIX")
-	if apiPrefix == "" {
-		apiPrefix = "/"
-	}
-
-	if !strings.HasPrefix(apiPrefix, "/") {
-		apiPrefix = fmt.Sprintf("/%v", apiPrefix)
-	}
+	apiPrefix := joinUrl(l.Context.Configuration.GetString("API_PREFIX"))
 
 	options.ApiPrefix = apiPrefix
 
@@ -350,6 +343,10 @@ func (l *HttpListener) getDefaultConfiguration() *HttpListenerOptions {
 func joinUrl(element ...string) string {
 	base := "/"
 	for _, e := range element {
+		if e == "" {
+			continue
+		}
+
 		e = strings.Trim(e, "/")
 		if !strings.HasSuffix(base, "/") {
 			base += "/"
@@ -368,10 +365,6 @@ func defaultHomepageController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(response)
-}
-
-func getDefaultBaseUrl() {
-
 }
 
 //endregion
