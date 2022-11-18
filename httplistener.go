@@ -36,6 +36,7 @@ type HttpListenerOptions struct {
 	MongoDbConnectionString string
 	DatabaseName            string
 	EnableAuthentication    bool
+	LogHealthChecks         bool
 }
 
 // HttpListener HttpListener structure
@@ -75,7 +76,7 @@ func NewHttpListener() *HttpListener {
 	listener.DefaultAdapters = make([]controllers.Adapter, 0)
 
 	// Appending the correlationId renewal
-	listener.DefaultAdapters = append(listener.DefaultAdapters, CorrelationMiddlewareAdapter())
+	listener.DefaultAdapters = append(listener.DefaultAdapters, CorrelationMiddlewareAdapter(listener.Options.LogHealthChecks))
 
 	listener.Options = listener.getDefaultConfiguration()
 
@@ -93,12 +94,12 @@ func GetHttpListener() *HttpListener {
 
 func (l *HttpListener) AddHealthCheck() *HttpListener {
 
-	l.AddController(l.Probe(), joinUrl("probe"), "GET")
+	l.AddController(l.Probe(), joinUrl("health", "probe"), "GET")
 	return l
 }
 
 func (l *HttpListener) AddLogger() *HttpListener {
-	l.DefaultAdapters = append(l.DefaultAdapters, LoggerMiddlewareAdapter())
+	l.DefaultAdapters = append(l.DefaultAdapters, LoggerMiddlewareAdapter(l.Options.LogHealthChecks))
 	return l
 }
 
@@ -317,6 +318,7 @@ func (l *HttpListener) getDefaultConfiguration() *HttpListenerOptions {
 		TLSPrivateKey:           l.Context.Configuration.GetBase64("TLS_PRIVATE_KEY"),
 		DatabaseName:            l.Context.Configuration.GetString("MONGODB_DATABASENAME"),
 		MongoDbConnectionString: l.Context.Configuration.GetBase64("MONGODB_CONNECTION_STRING"),
+		LogHealthChecks:         false,
 	}
 
 	if reflect_helper.IsNilOrEmpty(options.HttpPort) {
