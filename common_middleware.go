@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cjlapao/common-go/controllers"
+	"github.com/cjlapao/common-go-restapi/controllers"
 	"github.com/cjlapao/common-go/execution_context"
 )
 
@@ -31,6 +31,8 @@ func CorrelationMiddlewareAdapter(logHealthCheck bool) controllers.Adapter {
 			if shouldLog {
 				logger.Info("Http request with correlation %v", ctx.CorrelationId)
 			}
+
+			r.Header.Add("X-Correlation-Id", ctx.CorrelationId)
 			next.ServeHTTP(w, r)
 		})
 	}

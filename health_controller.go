@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/cjlapao/common-go/controllers"
+	"github.com/cjlapao/common-go-restapi/controllers"
 )
 
 // Login Generate a token for a valid user
