@@ -15,6 +15,7 @@ import (
 
 	"github.com/cjlapao/common-go-restapi/controllers"
 	"github.com/cjlapao/common-go/execution_context"
+	"github.com/cjlapao/common-go/helper/http_helper"
 	"github.com/cjlapao/common-go/helper/reflect_helper"
 	logger "github.com/cjlapao/common-go/log"
 	"github.com/gorilla/handlers"
@@ -90,7 +91,7 @@ func GetHttpListener() *HttpListener {
 
 func (l *HttpListener) AddHealthCheck() *HttpListener {
 
-	l.AddController(l.Probe(), joinUrl("health", "probe"), "GET")
+	l.AddController(l.Probe(), http_helper.JoinUrl("health", "probe"), "GET")
 	return l
 }
 
@@ -121,7 +122,7 @@ func (l *HttpListener) AddController(c controllers.Controller, path string, meth
 	adapters = append(adapters, l.DefaultAdapters...)
 
 	if l.Options.ApiPrefix != "" {
-		path = joinUrl(l.Options.ApiPrefix, path)
+		path = http_helper.JoinUrl(l.Options.ApiPrefix, path)
 	}
 	subRouter.HandleFunc(path, controllers.Adapt(
 		http.HandlerFunc(c),
@@ -246,31 +247,13 @@ func (l *HttpListener) getDefaultConfiguration() *HttpListenerOptions {
 		options.DatabaseName = "users"
 	}
 
-	apiPrefix := joinUrl(l.Context.Configuration.GetString("API_PREFIX"))
+	apiPrefix := http_helper.JoinUrl(l.Context.Configuration.GetString("API_PREFIX"))
 
 	options.ApiPrefix = apiPrefix
 
 	l.Options = &options
 
 	return l.Options
-}
-
-func joinUrl(element ...string) string {
-	base := "/"
-	for _, e := range element {
-		if e == "" {
-			continue
-		}
-
-		e = strings.Trim(e, "/")
-		if !strings.HasSuffix(base, "/") {
-			base += "/"
-		}
-
-		base += e
-	}
-
-	return strings.ReplaceAll(base, "//", "/")
 }
 
 func defaultHomepageController(w http.ResponseWriter, r *http.Request) {
