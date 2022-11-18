@@ -9,6 +9,7 @@ import (
 	"github.com/cjlapao/common-go-identity/middleware"
 	"github.com/cjlapao/common-go-restapi/controllers"
 	"github.com/cjlapao/common-go/execution_context"
+	"github.com/cjlapao/common-go/helper/http_helper"
 	"github.com/gorilla/mux"
 )
 
@@ -25,7 +26,7 @@ func (l *HttpListener) AddAuthorizedController(c controllers.Controller, path st
 	adapters = append(adapters, middleware.TokenAuthorizationMiddlewareAdapter([]string{}, []string{}))
 
 	if l.Options.ApiPrefix != "" {
-		path = joinUrl(l.Options.ApiPrefix, path)
+		path = http_helper.JoinUrl(l.Options.ApiPrefix, path)
 	}
 
 	subRouter.HandleFunc(path,
@@ -36,27 +37,27 @@ func (l *HttpListener) AddAuthorizedController(c controllers.Controller, path st
 
 func (l *HttpListener) WithDefaultAuthentication() *HttpListener {
 	context := database.NewMemoryUserAdapter()
-	return l.WithAuthentication("", context)
+	return l.WithAuthentication(context)
 }
 
-func (l *HttpListener) WithAuthentication(prefix string, context interfaces.UserContextAdapter) *HttpListener {
+func (l *HttpListener) WithAuthentication(context interfaces.UserContextAdapter) *HttpListener {
 	ctx := execution_context.Get()
 	if ctx.Authorization != nil {
 		defaultAuthControllers := identity_controllers.NewAuthorizationControllers(context)
 
-		l.AddController(defaultAuthControllers.Token(), joinUrl(prefix, "token"), "POST")
-		l.AddController(defaultAuthControllers.Token(), joinUrl(prefix, "token"), "POST")
-		l.AddController(defaultAuthControllers.Introspection(), joinUrl(prefix, "token/introspect"), "POST")
-		l.AddController(defaultAuthControllers.Introspection(), joinUrl(prefix, "{tenantId}/token/introspect"), "POST")
-		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Register(), joinUrl(prefix, "register"), []string{"_su,_admin"}, "POST")
-		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Register(), joinUrl(prefix, "{tenantId}/register"), []string{"_su,_admin"}, "POST")
-		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Revoke(), joinUrl(prefix, "revoke"), []string{"_su,_admin"}, "POST")
-		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Revoke(), joinUrl(prefix, "{tenantId}/revoke"), []string{"_su,_admin"}, "POST")
+		l.AddController(defaultAuthControllers.Token(), http_helper.JoinUrl(ctx.Authorization.Options.ControllerPrefix, "token"), "POST")
+		l.AddController(defaultAuthControllers.Token(), http_helper.JoinUrl(ctx.Authorization.Options.ControllerPrefix, "token"), "POST")
+		l.AddController(defaultAuthControllers.Introspection(), http_helper.JoinUrl(ctx.Authorization.Options.ControllerPrefix, "token", "introspect"), "POST")
+		l.AddController(defaultAuthControllers.Introspection(), http_helper.JoinUrl(ctx.Authorization.Options.ControllerPrefix, "{tenantId}", "token", "introspect"), "POST")
+		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Register(), http_helper.JoinUrl(ctx.Authorization.Options.ControllerPrefix, "register"), []string{"_su,_admin"}, "POST")
+		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Register(), http_helper.JoinUrl(ctx.Authorization.Options.ControllerPrefix, "{tenantId}", "register"), []string{"_su,_admin"}, "POST")
+		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Revoke(), http_helper.JoinUrl(ctx.Authorization.Options.ControllerPrefix, "revoke"), []string{"_su,_admin"}, "POST")
+		l.AddAuthorizedControllerWithRoles(defaultAuthControllers.Revoke(), http_helper.JoinUrl(ctx.Authorization.Options.ControllerPrefix, "{tenantId}", "revoke"), []string{"_su,_admin"}, "POST")
 
-		l.AddController(defaultAuthControllers.Configuration(), joinUrl(prefix, ".well-known/openid-configuration"), "GET")
-		l.AddController(defaultAuthControllers.Configuration(), joinUrl(prefix, "{tenantId}/.well-known/openid-configuration"), "GET")
-		l.AddController(defaultAuthControllers.Jwks(), joinUrl(prefix, ".well-known/openid-configuration/jwks"), "GET")
-		l.AddController(defaultAuthControllers.Jwks(), joinUrl(prefix, "{tenantId}/.well-known/openid-configuration/jwks"), "GET")
+		l.AddController(defaultAuthControllers.Configuration(), http_helper.JoinUrl(ctx.Authorization.Options.ControllerPrefix, ".well-known", "openid-configuration"), "GET")
+		l.AddController(defaultAuthControllers.Configuration(), http_helper.JoinUrl(ctx.Authorization.Options.ControllerPrefix, "{tenantId}", ".well-known", "openid-configuration"), "GET")
+		l.AddController(defaultAuthControllers.Jwks(), http_helper.JoinUrl(ctx.Authorization.Options.ControllerPrefix, ".well-known", "openid-configuration", "jwks"), "GET")
+		l.AddController(defaultAuthControllers.Jwks(), http_helper.JoinUrl(ctx.Authorization.Options.ControllerPrefix, "{tenantId}", ".well-known", "openid-configuration", "jwks"), "GET")
 		l.DefaultAdapters = append([]controllers.Adapter{middleware.EndAuthorizationMiddlewareAdapter()}, l.DefaultAdapters...)
 		l.Options.EnableAuthentication = true
 	} else {
@@ -86,7 +87,7 @@ func (l *HttpListener) AddAuthorizedControllerWithRolesAndClaims(c controllers.C
 	adapters = append(adapters, middleware.TokenAuthorizationMiddlewareAdapter(roles, claims))
 
 	if l.Options.ApiPrefix != "" {
-		path = joinUrl(l.Options.ApiPrefix, path)
+		path = http_helper.JoinUrl(l.Options.ApiPrefix, path)
 	}
 
 	subRouter.HandleFunc(path,
