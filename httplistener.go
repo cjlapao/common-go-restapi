@@ -71,10 +71,10 @@ func NewHttpListener() *HttpListener {
 	listener.Controllers = make([]controllers.Controller, 0)
 	listener.DefaultAdapters = make([]controllers.Adapter, 0)
 
+	listener.Options = listener.getDefaultConfiguration()
+
 	// Appending the correlationId renewal
 	listener.DefaultAdapters = append(listener.DefaultAdapters, CorrelationMiddlewareAdapter(listener.Options.LogHealthChecks))
-
-	listener.Options = listener.getDefaultConfiguration()
 
 	globalHttpListener = &listener
 	return globalHttpListener
