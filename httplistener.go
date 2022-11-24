@@ -34,6 +34,7 @@ type HttpListenerOptions struct {
 	DatabaseName            string
 	EnableAuthentication    bool
 	LogHealthChecks         bool
+	PublicRegistration      bool
 }
 
 // HttpListener HttpListener structure
@@ -106,6 +107,11 @@ func (l *HttpListener) AddJsonContent() *HttpListener {
 }
 
 func (l *HttpListener) AddDefaultHomepage() *HttpListener {
+	return l
+}
+
+func (l *HttpListener) WithPublicUserRegistration() *HttpListener {
+	l.Options.PublicRegistration = true
 	return l
 }
 
