@@ -3,7 +3,7 @@ module github.com/cjlapao/common-go-restapi
 go 1.19
 
 require (
-	github.com/cjlapao/common-go v0.0.35
+	github.com/cjlapao/common-go v0.0.36
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/stretchr/testify v1.8.1
