@@ -13,11 +13,11 @@ import (
 
 	"net/http"
 
+	log "github.com/cjlapao/common-go-logger"
 	"github.com/cjlapao/common-go-restapi/controllers"
 	"github.com/cjlapao/common-go/execution_context"
 	"github.com/cjlapao/common-go/helper/http_helper"
 	"github.com/cjlapao/common-go/helper/reflect_helper"
-	logger "github.com/cjlapao/common-go/log"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
@@ -41,7 +41,7 @@ type HttpListenerOptions struct {
 type HttpListener struct {
 	Router            *mux.Router
 	Context           *execution_context.Context
-	Logger            *logger.Logger
+	Logger            *log.LoggerService
 	Options           *HttpListenerOptions
 	Controllers       []controllers.Controller
 	DefaultAdapters   []controllers.Adapter
@@ -90,6 +90,14 @@ func GetHttpListener() *HttpListener {
 	return NewHttpListener()
 }
 
+func (l *HttpListener) GetApiPrefix() string {
+	if l.Options.ApiPrefix == "" {
+		return ""
+	}
+
+	return http_helper.JoinUrl(l.Options.ApiPrefix)
+}
+
 func (l *HttpListener) AddHealthCheck() *HttpListener {
 
 	l.AddController(l.Probe(), http_helper.JoinUrl("health", "probe"), "GET")
@@ -127,8 +135,8 @@ func (l *HttpListener) AddController(c controllers.Controller, path string, meth
 	adapters := make([]controllers.Adapter, 0)
 	adapters = append(adapters, l.DefaultAdapters...)
 
-	if l.Options.ApiPrefix != "" {
-		path = http_helper.JoinUrl(l.Options.ApiPrefix, path)
+	if l.GetApiPrefix() != "" {
+		path = http_helper.JoinUrl(l.GetApiPrefix(), path)
 	}
 	subRouter.HandleFunc(path, controllers.Adapt(
 		http.HandlerFunc(c),
@@ -144,8 +152,8 @@ func (l *HttpListener) Start() {
 
 	done := make(chan bool)
 
-	l.Router.HandleFunc(l.Options.ApiPrefix+"/", defaultHomepageController)
-	l.Router.HandleFunc(l.Options.ApiPrefix+"/shutdown", globalHttpListener.ShutdownHandler)
+	l.Router.HandleFunc(l.GetApiPrefix()+"/", defaultHomepageController)
+	l.Router.HandleFunc(l.GetApiPrefix()+"/shutdown", globalHttpListener.ShutdownHandler)
 
 	// Creating and starting the http server
 	srv := &http.Server{
@@ -156,7 +164,7 @@ func (l *HttpListener) Start() {
 	l.Servers = append(l.Servers, srv)
 
 	go func() {
-		l.Logger.Info("Api listening on http://::" + l.Options.HttpPort + l.Options.ApiPrefix)
+		l.Logger.Info("Api listening on http://::" + l.Options.HttpPort + l.GetApiPrefix())
 		l.Logger.Success("Finished Initiating http server")
 		if err := srv.ListenAndServe(); err != nil {
 			if !strings.Contains(err.Error(), "http: Server closed") {
@@ -182,7 +190,7 @@ func (l *HttpListener) Start() {
 			l.Servers = append(l.Servers, sslSrv)
 
 			go func() {
-				l.Logger.Info("Api listening on https://::" + l.Options.TLSPort + l.Options.ApiPrefix)
+				l.Logger.Info("Api listening on https://::" + l.Options.TLSPort + l.GetApiPrefix())
 				l.Logger.Success("Finished Initiating https server")
 				if err := sslSrv.ListenAndServeTLS("", ""); err != nil {
 					if !strings.Contains(err.Error(), "http: Server closed") {

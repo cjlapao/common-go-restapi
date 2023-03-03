@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/cjlapao/common-go-restapi/controllers"
@@ -42,7 +43,8 @@ func LoggerMiddlewareAdapter(logHealthCheck bool) controllers.Adapter {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			shouldLog := true
-			if strings.ContainsAny(r.URL.Path, "health") && !logHealthCheck {
+			rMatch := regexp.MustCompile("health")
+			if rMatch.MatchString(r.URL.Path) && !logHealthCheck {
 				shouldLog = false
 			}
 
