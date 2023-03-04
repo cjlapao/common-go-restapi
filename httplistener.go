@@ -68,7 +68,7 @@ func NewHttpListener() *HttpListener {
 	}
 
 	listener.shutdownRequest = make(chan bool)
-	listener.Logger = listener.Context.Services.Logger
+	listener.Logger = log.Get()
 
 	listener.Controllers = make([]controllers.Controller, 0)
 	listener.DefaultAdapters = make([]controllers.Adapter, 0)
