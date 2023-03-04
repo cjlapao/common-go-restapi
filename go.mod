@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/cjlapao/common-go v0.0.39
+	github.com/cjlapao/common-go-execution-context v0.0.1
 	github.com/cjlapao/common-go-logger v0.0.2
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
@@ -12,7 +13,7 @@ require (
 
 require (
 	github.com/cjlapao/common-go-cryptorand v0.0.4 // indirect
-	github.com/cjlapao/common-go-identity v0.0.3 // indirect
+	github.com/cjlapao/common-go-identity v0.0.12 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.14.1 // indirect
 	github.com/felixge/httpsnoop v1.0.1 // indirect

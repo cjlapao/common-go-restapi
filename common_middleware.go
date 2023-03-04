@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
+	execution_context "github.com/cjlapao/common-go-execution-context"
 	"github.com/cjlapao/common-go-restapi/controllers"
-	"github.com/cjlapao/common-go/execution_context"
 )
 
 func JsonContentMiddlewareAdapter() controllers.Adapter {
