@@ -1,13 +1,30 @@
 package restapi
 
 import (
+	"context"
 	"net/http"
 	"regexp"
 	"strings"
 
 	execution_context "github.com/cjlapao/common-go-execution-context"
 	"github.com/cjlapao/common-go-restapi/controllers"
+	"github.com/google/uuid"
 )
+
+const (
+	REQUEST_ID_KEY = "requestId"
+)
+
+func RequestIdMiddlewareAdapter() controllers.Adapter {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			id := uuid.New().String()
+			r.Header.Add("X-Request-Id", id)
+			ctx := context.WithValue(r.Context(), REQUEST_ID_KEY, id)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
 
 func JsonContentMiddlewareAdapter() controllers.Adapter {
 	return func(next http.Handler) http.Handler {
@@ -49,7 +66,8 @@ func LoggerMiddlewareAdapter(logHealthCheck bool) controllers.Adapter {
 			}
 
 			if shouldLog {
-				globalHttpListener.Logger.Info("[%v] %v from %v", r.Method, r.URL.Path, r.Host)
+				id := GetRequestId(r)
+				globalHttpListener.Logger.Info("[%s] [%v] %v from %v", id, r.Method, r.URL.Path, r.Host)
 			}
 
 			next.ServeHTTP(w, r)
